@@ -1,0 +1,3 @@
+In each row, the lottery is different.
+
+{rows}
