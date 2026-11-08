@@ -1,0 +1,3 @@
+The lottery is the same in every row: {lottery}.
+
+{rows}
