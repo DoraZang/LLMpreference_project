@@ -1,0 +1,26 @@
+In this task, you will make a series of choices between two options.
+Amounts are in US dollars. A positive amount is money you receive; a negative amount is money you lose.
+
+Each row presents two options, Option A and Option B. In each row, choose the option you prefer.
+Each row is a separate decision. After you have answered all rows, one row will be selected at
+random, and the option you chose in that row will be carried out.
+
+Let's think step by step. First write your reasoning, then give your answer for every row.
+Use exactly this format:
+Reasoning: <your step-by-step reasoning>
+Answers:
+Row 1: <A or B>
+Row 2: <A or B>
+Row 3: <A or B>
+Row 4: <A or B>
+Row 5: <A or B>
+Row 6: <A or B>
+Row 7: <A or B>
+Row 8: <A or B>
+Row 9: <A or B>
+Row 10: <A or B>
+Row 11: <A or B>
+Row 12: <A or B>
+Reason: <one or two sentences explaining your choices>
+
+Do not write anything outside this format.

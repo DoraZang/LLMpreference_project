@@ -1,0 +1,4 @@
+The lottery is the same in every row: {lottery}.
+The expected value of the lottery is {ev}.
+
+{rows}

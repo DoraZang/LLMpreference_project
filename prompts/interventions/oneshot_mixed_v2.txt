@@ -1,0 +1,34 @@
+Below is an example of a similar task and the answers you gave.
+
+Example task:
+In each row, the lottery is different.
+
+Row 1: Option A: $0.00 for sure. Option B: a 50% chance of $60.00 and a 50% chance of -$60.00.
+Row 2: Option A: $0.00 for sure. Option B: a 50% chance of $144.00 and a 50% chance of -$60.00.
+Row 3: Option A: $0.00 for sure. Option B: a 50% chance of $132.00 and a 50% chance of -$60.00.
+Row 4: Option A: $0.00 for sure. Option B: a 50% chance of $24.00 and a 50% chance of -$60.00.
+Row 5: Option A: $0.00 for sure. Option B: a 50% chance of $120.00 and a 50% chance of -$60.00.
+Row 6: Option A: $0.00 for sure. Option B: a 50% chance of $96.00 and a 50% chance of -$60.00.
+Row 7: Option A: $0.00 for sure. Option B: a 50% chance of $108.00 and a 50% chance of -$60.00.
+Row 8: Option A: $0.00 for sure. Option B: a 50% chance of $48.00 and a 50% chance of -$60.00.
+Row 9: Option A: $0.00 for sure. Option B: a 50% chance of $12.00 and a 50% chance of -$60.00.
+Row 10: Option A: $0.00 for sure. Option B: a 50% chance of $36.00 and a 50% chance of -$60.00.
+Row 11: Option A: $0.00 for sure. Option B: a 50% chance of $84.00 and a 50% chance of -$60.00.
+Row 12: Option A: $0.00 for sure. Option B: a 50% chance of $72.00 and a 50% chance of -$60.00.
+
+Your answers:
+Row 1: A
+Row 2: B
+Row 3: B
+Row 4: A
+Row 5: B
+Row 6: A
+Row 7: A
+Row 8: A
+Row 9: A
+Row 10: A
+Row 11: A
+Row 12: A
+Reason: I compared the two options in each row.
+
+Now answer the new task in the same format.
