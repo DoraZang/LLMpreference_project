@@ -21,7 +21,14 @@ Outputs:
   results/tables/<run>_levels.csv      mean level of every outcome per condition and mode
   The primary contrasts are also printed.
 
-Usage: python src/analyze_main.py --run main
+Sensitivity analysis S1 (--include-invalid): non-monotonic and dominance-violating responses are
+not excluded; each gets the switch point of the closest consistent pattern (fewest changed rows; if
+several are equally close, their values are averaged). Parse failures stay excluded. Outputs are
+written with the suffix _S1, so the pre-registered primary results are not overwritten.
+
+Usage:
+  python src/analyze_main.py --run main
+  python src/analyze_main.py --run main --include-invalid      # sensitivity analysis S1
 """
 
 import argparse
@@ -77,8 +84,41 @@ PREDICTIONS = {
 }
 
 
-def load_results(run):
-    """Parsed result of the latest successful record for each custom_id."""
+def recover(res, item):
+    """S1: give a non-monotonic or dominance-violating response the metrics of the closest consistent
+    pattern. Gain/loss: patterns 0^k 1^(12-k) with 1 <= k <= 11 (a switch inside the list, both endpoints
+    correct). Mixed: 0 <= k <= 12 (no switch = censored, as in the primary analysis)."""
+    states = [c == "1" for c in res["pattern"]]
+    n = len(states)
+    gain_loss = item["item_type"] in ("gain", "loss")
+    ks = range(1, n) if gain_loss else range(0, n + 1)
+    dist = {k: sum(states[i] != (i >= k) for i in range(n)) for k in ks}
+    best = min(dist.values())
+    tied = [k for k in ks if dist[k] == best]
+    if gain_loss:
+        keys = sorted(item["options"])
+        ces = [(keys[k - 1] + keys[k]) / 2 for k in tied]
+        ce = mean(ces)
+        res["ce"] = ce
+        res["risk_premium"] = (item["ev"] - ce) / abs(item["ev"])
+        res["risk_premium_range"] = (item["ev"] - ce) / abs(item["x_high"] - item["x_low"])
+    else:
+        keys = sorted(r["ratio"] for r in item["rows"])
+        def la(k):
+            if k == 0:
+                return keys[0]
+            if k == n:
+                return keys[-1]
+            return math.sqrt(keys[k - 1] * keys[k])
+        res["la_ratio"] = math.exp(mean(math.log(la(k)) for k in tied))
+    res["status"] = "valid"
+    res["recovered"] = True
+    return res
+
+
+def load_results(run, include_invalid=False):
+    """Parsed result of the latest successful record for each custom_id.
+    include_invalid: apply recover() to non-monotonic and dominance-violating responses (S1)."""
     items = {it["item_id"]: it for it in load_items()}
     latest = {}
     with open(ROOT / "data" / "raw" / f"{run}.jsonl", encoding="utf-8") as f:
@@ -90,6 +130,8 @@ def load_results(run):
     for r in latest.values():
         res = analyze(items[r["item_id"]], r, r["output_text"])
         res.update(condition=r["condition"], mode=r["reasoning_effort"])
+        if include_invalid and res["status"] in ("non_monotonic", "dominance_violation"):
+            res = recover(res, items[r["item_id"]])
         out.append(res)
     return out
 
@@ -171,8 +213,10 @@ def conclude(est, ci, half_step, prediction):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", default="main")
+    parser.add_argument("--include-invalid", action="store_true", help="sensitivity analysis S1")
     args = parser.parse_args()
-    results = load_results(args.run)
+    results = load_results(args.run, include_invalid=args.include_invalid)
+    suffix = "_S1" if args.include_invalid else ""
     values = item_values(results)
     rng = random.Random(SEED)
     primary_keys = {(m, c, t, o): pid for pid, m, c, t, o, _ in PRIMARY}
@@ -208,7 +252,7 @@ def main():
 
     out_dir = ROOT / "results" / "tables"
     out_dir.mkdir(parents=True, exist_ok=True)
-    with open(out_dir / f"{args.run}_contrasts.csv", "w", newline="", encoding="utf-8") as f:
+    with open(out_dir / f"{args.run}_contrasts{suffix}.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
@@ -219,14 +263,15 @@ def main():
         levels.append({"mode": mode, "condition": condition, "item_type": item_type, "outcome": outcome,
                        "n_items": len(vals), "mean": round(m, 4),
                        "ratio_geometric_mean": round(math.exp(m), 3) if outcome == "log_ratio" else ""})
-    with open(out_dir / f"{args.run}_levels.csv", "w", newline="", encoding="utf-8") as f:
+    with open(out_dir / f"{args.run}_levels{suffix}.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(levels[0]))
         writer.writeheader()
         writer.writerows(levels)
 
     print(f"{len(results)} responses analyzed; {len(rows)} contrasts written to {out_dir}\n")
-    print(f"Primary contrasts (decision on Bonferroni-adjusted {ADJ_LEVEL:.2%} CI):")
-    print(f"{'ID':<5}{'mode':<6}{'condition':<19}{'type':<7}{'pred':<6}{'est (steps)':>12}"
+    label = "S1 sensitivity analysis (invalid responses included)" if args.include_invalid else "Primary contrasts"
+    print(f"{label} (decision on Bonferroni-adjusted {ADJ_LEVEL:.2%} CI):")
+    print(f"{'ID':<5}{'mode':<6}{'condition':<19}{'type':<7}{'pred':<6}{'items':>6}{'est (steps)':>12}"
           f"{'adjusted CI':>22}   conclusion")
     by_id = {r["primary"]: r for r in rows if r["primary"]}
     for pid, *_ in PRIMARY:
@@ -236,7 +281,7 @@ def main():
             continue
         ci = f"[{r['ci_adj_low']:+.3f}, {r['ci_adj_high']:+.3f}]"
         print(f"{pid:<5}{r['mode']:<6}{r['condition']:<19}{r['item_type']:<7}{r['prediction']:<6}"
-              f"{r['estimate_steps']:>12}{ci:>22}   {r['conclusion']}")
+              f"{r['n_items']:>6}{r['estimate_steps']:>12}{ci:>22}   {r['conclusion']}")
 
 
 if __name__ == "__main__":

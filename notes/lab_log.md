@@ -253,3 +253,46 @@
   reflect this attenuation; sensitivity analysis S1 (including invalid responses) addresses it in part.
 - A first version of the simulation had the loss-domain direction reversed (a bug in the simulation, not the
   analysis), detected because P7/P10 came out with the opposite sign.
+
+## 2026-11-15 Main experiment collected
+
+- Submitted in two rounds of 5 parts (batch queue limit 20M tokens for gpt-6-luna);
+  2 requests failed at the API level and were resubmitted once (retry part10).
+- 28,600 / 28,600 successful responses. All "completed" (no truncation).
+- model_returned: "gpt-6-luna" for all responses (alias only; updates cannot be detected from this field).
+- Time span of all responses: 2026-11-15 18:02-20:51 UTC (~2 h 50 min); every batch part mixed all conditions.
+- Data: data/raw/main.jsonl; batch IDs in data/batch/main/batches.json.
+
+## 2026-11-15 Main results (pre-registered) and why valid rates dropped
+
+- Primary contrasts: 9 effects as predicted (P1-P5, P9-P12), 3 inconclusive (P6, P7, P8), none opposite.
+  P8: decision "inconclusive" (adjusted CI lower bound just beyond -half a step), but the upper bound
+  (+0.05 steps) rules out a meaningful increase in loss aversion from the pure-loss example.
+- Valid rates fell sharply under direct instructions in reasoning "none" (e.g. direct_risk_plain gain 14%,
+  loss 26%; baseline 73% / 60%). status_table.py shows the drop is almost entirely "always choose the sure
+  amount" (direct_risk_plain: 78% of gain responses, 66% of loss responses), which violates first-order
+  stochastic dominance; non-monotonic rates barely changed. Also present under direct_loss_tech (26-32%)
+  and, less, in reasoning "high" (direct_risk_plain 10-16%).
+- Consequences: (1) the excluded responses are the most risk-averse ones, so measured effects of direct
+  risk instructions are underestimated; (2) P2 rests on only 5 of 20 items (min-3-valid rule), so its
+  estimate and CI are unreliable; (3) instructions partly induce a non-rational rule ("avoid any lottery")
+  rather than a coherent risk-averse preference.
+- Baseline "none" gain items: 14% "always choose the lottery", so baseline risk-seeking is also underestimated.
+- Sensitivity analysis S1 added to analyze_main.py (--include-invalid): invalid responses get the switch
+  point of the closest consistent pattern. On simulated data with purely random invalid answers, S1 dilutes
+  effects; with structured invalid answers (as here), it should recover them. Interpret alongside the primary analysis.
+
+## 2026-11-15 Sensitivity analysis S1 (invalid responses included)
+
+- All 12 primary conclusions unchanged under S1.
+- Direct risk instructions (reasoning "none", gain items): P1 1.63 -> 3.23 steps (17 -> 20 items),
+  P2 3.59 -> 5.95 steps (5 -> 20 items). Effects grow rather than dilute, consistent with the excluded
+  responses being mostly "always choose the sure amount" (structured, not random).
+- Mixed-item and reasoning-"high" contrasts barely change (valid rates already 97-100%).
+- Interpretation: direct risk instructions act on two margins. Intensive: among coherent responses,
+  risk aversion rises (primary analysis). Extensive: a large share of responses switch to the rule
+  "always choose the sure amount" (status_table.py: 1% baseline -> 40% tech / 78% plain, gain items).
+  The S1 estimate for P2 mostly reflects the extensive margin and is still conservative, because
+  always-sure responses are recoded to the most risk-averse value the scale can measure.
+- Report both margins separately; S1 as a robustness check.
+- levels_table.py: added --s1 to read <run>_levels_S1.csv.
