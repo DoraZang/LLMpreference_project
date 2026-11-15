@@ -8,3 +8,9 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Batch API: large files that can be regenerated or re-downloaded
+data/batch/*/requests_*.jsonl
+data/batch/*/output_*.jsonl
+data/batch/*/errors_*.jsonl
+data/raw/simrecovery.jsonl

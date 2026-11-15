@@ -15,6 +15,8 @@ Usage:
   python src/run_smoke.py --run smoke_cot --condition cot --full-rows      # another condition
   python src/run_smoke.py --run check_oneshot_gain --condition oneshot_gain --full-rows --sample 6
                                                     # format check only: 6 random calls
+  python src/run_smoke.py --run pilot --full-rows --samples 20 --items gain_03 gain_16 loss_03 loss_16 mixed_A_05 mixed_B_08
+                                                    # pilot: repeated samples of selected items
 """
 
 import argparse
@@ -30,22 +32,23 @@ MAX_WORKERS = 8   # number of requests sent in parallel
 
 
 def done_keys(out_path):
-    """(item_id, version, reasoning_effort) of calls that already succeeded."""
+    """(item_id, version, reasoning_effort, sample) of calls that already succeeded."""
     keys = set()
     if out_path.exists():
         with open(out_path, encoding="utf-8") as f:
             for line in f:
                 r = json.loads(line)
                 if r.get("error") is None:
-                    keys.add((r["item_id"], r["version"], r["reasoning_effort"]))
+                    keys.add((r["item_id"], r["version"], r["reasoning_effort"], r.get("sample", 0)))
     return keys
 
 
-def run_one(run, condition, item, version, mode, shuffle, full_rows):
+def run_one(run, condition, item, version, mode, shuffle, full_rows, sample):
     # Seeded per call, so the row order is reproducible; it is also saved in the record.
-    rng = random.Random(f"{run}|{item['item_id']}|{version}|{mode}")
+    seed = f"{run}|{item['item_id']}|{version}|{mode}" + (f"|{sample}" if sample else "")
+    rng = random.Random(seed)
     prompt = build_prompt(item, version, rng, condition=condition, shuffle=shuffle, full_rows=full_rows)
-    base = {"run": run, **prompt}
+    base = {"run": run, "sample": sample, **prompt}
     try:
         call = call_model(prompt["system"], prompt["user"], reasoning_effort=mode,
                           long_output=prompt["long_output"])
@@ -62,10 +65,10 @@ def main():
     parser.add_argument("--no-shuffle", action="store_true", help="show rows in sorted order")
     parser.add_argument("--full-rows", action="store_true", help="gain/loss: spell out the lottery in every row")
     parser.add_argument("--sample", type=int, default=None, help="run only this many randomly chosen calls")
+    parser.add_argument("--samples", type=int, default=1, help="repeated calls per item x version x mode")
+    parser.add_argument("--items", nargs="+", default=None, help="only these item_ids")
     args = parser.parse_args()
     if args.condition not in CONDITIONS:
-        if args.sample is not None:
-            tasks = random.Random(0).sample(tasks, min(args.sample, len(tasks)))
         parser.error(f"unknown condition {args.condition!r}; choose from {list(CONDITIONS)}")
     out_path = ROOT / "data" / "raw" / f"{args.run}.jsonl"
     shuffle = not args.no_shuffle
@@ -74,8 +77,16 @@ def main():
     items = load_items()
     skip = done_keys(out_path)
     types = CONDITIONS[args.condition].get("item_types", ["gain", "loss", "mixed"])
-    tasks = [(args.run, args.condition, it, v, m, shuffle, args.full_rows) for m in args.modes for it in items for v in VERSIONS
-             if it["item_type"] in types and (it["item_id"], v, m) not in skip]
+    if args.items:
+        unknown = set(args.items) - {it["item_id"] for it in items}
+        if unknown:
+            parser.error(f"unknown item_ids: {sorted(unknown)}")
+        items = [it for it in items if it["item_id"] in args.items]
+    tasks = [(args.run, args.condition, it, v, m, shuffle, args.full_rows, k)
+             for m in args.modes for it in items for v in VERSIONS for k in range(args.samples)
+             if it["item_type"] in types and (it["item_id"], v, m, k) not in skip]
+    if args.sample is not None:
+        tasks = random.Random(0).sample(tasks, min(args.sample, len(tasks)))
     print(f"{len(tasks)} calls to make ({len(skip)} already done)")
 
     total_cost, n_err = 0.0, 0

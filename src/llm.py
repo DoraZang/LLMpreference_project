@@ -31,8 +31,8 @@ def get_client():
     return _client
 
 
-def call_model(system, user, reasoning_effort="none", max_output_tokens=None, long_output=False):
-    """Send one request; return a dict with the output text and call metadata.
+def request_params(system, user, reasoning_effort="none", max_output_tokens=None, long_output=False):
+    """Request body for one call. Shared by direct calls and the Batch API, so both send identical requests.
 
     long_output: the answer format asks for written reasoning (e.g. CoT), so the
     non-reasoning cap is raised from 500 to 2000 tokens.
@@ -53,19 +53,21 @@ def call_model(system, user, reasoning_effort="none", max_output_tokens=None, lo
     }
     if reasoning_effort == "none":
         params["temperature"] = 1
+    return params
 
-    response = get_client().responses.create(**params)
 
+def summarize_response(response, params):
+    """Call metadata and output from a Response object (direct call or Batch API result)."""
     usage = response.usage
     details = usage.output_tokens_details
     return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "model_requested": MODEL,
+        "timestamp": datetime.fromtimestamp(response.created_at, timezone.utc).isoformat(),
+        "model_requested": params["model"],
+        "reasoning_effort": params["reasoning"]["effort"],
+        "temperature": params.get("temperature"),
+        "max_output_tokens": params["max_output_tokens"],
         "model_returned": response.model,
         "response_id": response.id,
-        "reasoning_effort": reasoning_effort,
-        "temperature": params.get("temperature"),
-        "max_output_tokens": max_output_tokens,
         "status": response.status,
         "incomplete_reason": response.incomplete_details.reason if response.incomplete_details else None,
         "output_text": response.output_text,
@@ -73,6 +75,13 @@ def call_model(system, user, reasoning_effort="none", max_output_tokens=None, lo
         "output_tokens": usage.output_tokens,
         "reasoning_tokens": details.reasoning_tokens if details else None,
     }
+
+
+def call_model(system, user, reasoning_effort="none", max_output_tokens=None, long_output=False):
+    """Send one request directly (not through the Batch API)."""
+    params = request_params(system, user, reasoning_effort, max_output_tokens, long_output)
+    response = get_client().responses.create(**params)
+    return summarize_response(response, params)
 
 
 def cost_usd(call):
