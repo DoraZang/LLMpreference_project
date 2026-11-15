@@ -1,0 +1,32 @@
+{
+  "part00": {
+    "batch_id": "batch_6af9f38c924881908ffbabc3769342f7",
+    "input_file_id": "file-YCmysSEQFKCgvdYA3NtXAa",
+    "submitted_at": "2026-11-15T18:01:50.544565+00:00"
+  },
+  "part01": {
+    "batch_id": "batch_6af9f38f99b8819080a1df83878e5462",
+    "input_file_id": "file-L2r2zDcoSvCPrK8vzCiw6B",
+    "submitted_at": "2026-11-15T18:01:53.270689+00:00"
+  },
+  "part02": {
+    "batch_id": "batch_6af9f391ca08819095b2b168ca38b878",
+    "input_file_id": "file-SU5oY4Zm3enR13ZQFV8MWZ",
+    "submitted_at": "2026-11-15T18:01:55.419769+00:00"
+  },
+  "part03": {
+    "batch_id": "batch_6af9f39381648190a4cd06f578022f6e",
+    "input_file_id": "file-6ZiNHEFKB2acVqpibJhXub",
+    "submitted_at": "2026-11-15T18:01:57.161587+00:00"
+  },
+  "part04": {
+    "batch_id": "batch_6af9f3960e388190b6df1cefd9523ad3",
+    "input_file_id": "file-3SeY6wPdd5s8TxswD86DWV",
+    "submitted_at": "2026-11-15T18:01:59.675942+00:00"
+  },
+  "part05": null,
+  "part06": null,
+  "part07": null,
+  "part08": null,
+  "part09": null
+}
