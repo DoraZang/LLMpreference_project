@@ -321,3 +321,18 @@
 - Codebook clarified after labeling (before any LLM labels): (1) "even when ... expected value /
   average" counts as referring to expected value; (2) names_preference restricted to a fixed list of
   expressions. Agreement will also be reported with EV + risk averse and risk averse merged.
+
+## 2026-11-21 Reason analysis step 3: LLM labeler, decision rule (set before any labeling run)
+
+- Labeler: Claude via the Anthropic API (src/label_reasons.py). Reason text only, codebook as the
+  system prompt, label forced through a tool schema with the codebook labels, temperature 0, no
+  rationale. Models compared on the validation sample: claude-haiku-5-5 and claude-sonnet-5-5.
+- Reference: hand labels frozen at commit 0675181.
+- A labeler is acceptable if (1) kappa with EV + risk averse merged into risk averse is >= 0.70 and
+  percent agreement is >= 85%, and (2) no single directed confusion (hand label X -> LLM label Y)
+  occurs more than 3 times.
+- If both models are acceptable and Sonnet's merged kappa exceeds Haiku's by less than 0.05, Haiku
+  labels the full data (cheaper). If neither is acceptable, the prompt may be revised using the
+  discovery sample only, followed by one logged re-test on the validation sample.
+- Agreement will be reported with the caveat that the hand labels were partly revised after LLM
+  suggestions.
