@@ -296,3 +296,28 @@
   always-sure responses are recoded to the most risk-averse value the scale can measure.
 - Report both margins separately; S1 as a robustness check.
 - levels_table.py: added --s1 to read <run>_levels_S1.csv.
+
+## 2026-11-15 Reason analysis: codebook
+
+- Discovery sample (112 reasons, 2 per condition x mode x item type, blind to condition) read and
+  coded with free tags. No new tag types appeared in the later reasons (saturation); no extra sample.
+- Rough impression (not a result): more than half of the reasons state a pure expected-value rule.
+- Codebook decisions: (1) one main label for the stated decision rule plus a yes/no flag
+  names_preference; (2) label by the rule, so a reason that claims risk or loss aversion but states
+  a pure EV rule is "EV" with names_preference = yes; (3) "gain-loss tradeoff" generalized to
+  "vague tradeoff" (any item type); (4) "avoid loss" merged into "risk averse" because the two could
+  not be told apart reliably; (5) tie-breaking statements ignored (items have no ties);
+  (6) "other" added for reasons without a usable rule.
+- Codebook: docs/reason_codebook.md. Validation sample (100 reasons) to be labeled with it.
+
+## 2026-11-16 Validation sample labeled (100 reasons)
+
+- Labeled blind to condition with docs/reason_codebook.md
+  (results/reasons/validation_reasons_labeled.xlsx).
+- Reviewed afterwards with an LLM (the assistant), which suggested corrections for slips and rows
+  marked as unsure. Rows the labeler agreed with on rereading were changed directly; the original
+  labels were not kept. Because the reference labels were partly shaped by an LLM, agreement with
+  the LLM labels may be somewhat inflated; this is reported as a limitation.
+- Codebook clarified after labeling (before any LLM labels): (1) "even when ... expected value /
+  average" counts as referring to expected value; (2) names_preference restricted to a fixed list of
+  expressions. Agreement will also be reported with EV + risk averse and risk averse merged.
