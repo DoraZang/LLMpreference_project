@@ -381,3 +381,18 @@
   not change.
 - Remaining systematic disagreement: risk averse -> EV + risk averse (3, both models). "even when … average / expected value" mentioned in the reason
   should be considered as "EV + risk averse". So the llm is in fact, more accurate. This was ignored during hand-labeling.
+
+## 2026-11-21 Reason analysis step 3: full labeling
+
+- All main-run reasons labeled with claude-haiku-5-5 (thinking disabled, prompt fe25ff54a191) through
+  the Message Batches API (src/label_batch.py). 28,600 responses, no parse_fail responses;
+  24,021 distinct reason texts, each labeled once and copied to every response with that text.
+  Cost $0.4712.
+- Output: results/reasons/reason_labels_main_claude-haiku-5-5.csv (one row per response).
+- Re-labeling check: the 100 validation reasons were labeled again in the full run (separate calls,
+  same setup): same label 96.0%, kappa 0.924. Labeler noise from default-temperature sampling is
+  small, so labels are used from a single call (no majority vote).
+- Label shares over responses: EV 65.0%, EV + risk averse 15.9%, vague tradeoff 8.1%, risk averse
+  7.6%, loss averse 2.7%, other 0.5%, risk seeking 0.3%.
+- other, risk seeking and loss averse were barely present in the validation sample; their accuracy
+  is not established by the agreement statistics.

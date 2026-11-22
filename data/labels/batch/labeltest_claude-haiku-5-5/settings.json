@@ -1,0 +1,9 @@
+{
+  "run": "main",
+  "model": "claude-haiku-5-5",
+  "thinking": "disabled",
+  "effort": "low",
+  "prompt_sha256": "fe25ff54a1911d688b25dd8a8c7442a0d0ae1760e71cda86f9c0831a5ef62c64",
+  "planned_at": "2026-11-22T03:57:49.335333+00:00",
+  "test": 20
+}
