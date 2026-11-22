@@ -9,11 +9,15 @@ Step 3a: label the 100 validation reasons and compare with the hand labels.
 Design notes:
   - The labeler sees only the reason text, like the hand labeling (blind to condition, mode, item and
     behavior).
-  - The answer is forced through a tool call whose input schema allows only the codebook labels, so every
-    successful answer is a valid label (no free-text parsing).
-  - temperature 0, no extended thinking, no rationale field.
-  - The full prompt (system text + tool schema) is identified by a SHA-256 hash stored with every record.
-    If the codebook file changes, the hash changes and earlier labels are not mixed with new ones.
+  - The answer is constrained by structured outputs (output_config.format, JSON schema): the label can only
+    be one of the codebook labels and the flag only true/false, so no free-text parsing is needed.
+  - Current Claude models (API version 2026-10-21) accept no temperature and no forced tool choice, so the
+    labels are sampled at the default temperature (see lab log). Thinking is off by default
+    (thinking "between_tools", effort "low"); --thinking adaptive is the fallback if a model rejects it.
+    No rationale field.
+  - The full request setup (system text, schema, thinking and effort settings) is identified by a SHA-256
+    hash stored with every record. If the codebook or a setting changes, the hash changes and earlier
+    labels are not mixed with new ones.
   - Records are append-only (data/labels/<run>_<model>.jsonl); re-running skips reasons already labeled
     with the same model and prompt hash.
   - The system prompt is marked for prompt caching, which makes the long codebook cheap after the first call.
@@ -49,60 +53,69 @@ gamble (win a gain or lose a loss) with a sure $0 (mixed items). It then wrote a
 Apply the codebook below exactly. Answer the questions of the decision procedure in order and stop at the
 first label that applies. Label only what the reason states; do not guess the item, the instructions the
 model was given, or what it actually chose. Then set the names_preference flag as the codebook defines it.
-Record your answer with the record_label tool.
+Answer with the JSON object only.
 
 <codebook>
 {codebook}
 </codebook>"""
 
-TOOL = {
-    "name": "record_label",
-    "description": "Record the codebook label and the names_preference flag for one reason.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "label": {"type": "string", "enum": LABELS,
-                      "description": "Main label from the decision procedure (first label that applies)."},
-            "names_preference": {"type": "boolean",
-                                 "description": "True only if the reason uses one of the expressions listed "
-                                                "for the names_preference flag (or a close variant)."},
-        },
-        "required": ["label", "names_preference"],
-        "additionalProperties": False,
+SCHEMA = {
+    "type": "object",
+    "properties": {
+        "label": {"type": "string", "enum": LABELS,
+                  "description": "Main label from the decision procedure (first label that applies)."},
+        "names_preference": {"type": "boolean",
+                             "description": "True only if the reason uses one of the expressions listed "
+                                            "for the names_preference flag (or a close variant)."},
     },
+    "required": ["label", "names_preference"],
+    "additionalProperties": False,
 }
+
+EFFORT = "low"
+THINKING = "between_tools"   # changed by --thinking
 
 
 def system_text():
     return SYSTEM_TEMPLATE.format(codebook=CODEBOOK.read_text(encoding="utf-8").strip())
 
 
+def settings():
+    return {"thinking": THINKING, "effort": EFFORT}
+
+
 def prompt_hash():
-    return hashlib.sha256((system_text() + json.dumps(TOOL, sort_keys=True)).encode()).hexdigest()
+    setup = system_text() + json.dumps(SCHEMA, sort_keys=True) + json.dumps(settings(), sort_keys=True)
+    return hashlib.sha256(setup.encode()).hexdigest()
 
 
 def request_params(model, reason):
     """Request body for one reason. Shared by direct calls and (later) the Batch API."""
     return {
         "model": model,
-        "max_tokens": 200,
-        "temperature": 0,
+        # adaptive thinking counts toward max_tokens, so it needs a much higher cap
+        "max_tokens": 300 if THINKING == "between_tools" else 4000,
+        "thinking": {"type": THINKING},
         "system": [{"type": "text", "text": system_text(), "cache_control": {"type": "ephemeral"}}],
-        "tools": [TOOL],
-        "tool_choice": {"type": "tool", "name": "record_label"},
+        "output_config": {"format": {"type": "json_schema", "schema": SCHEMA}, "effort": EFFORT},
         "messages": [{"role": "user", "content": f"<reason>\n{reason}\n</reason>"}],
     }
 
 
 def summarize_message(msg):
     """Label, flag and call metadata from a Message object."""
-    tool_input = next((b.input for b in msg.content if b.type == "tool_use"), None)
+    text = next((b.text for b in msg.content if b.type == "text"), None)
+    try:
+        parsed = json.loads(text) if text else None
+    except json.JSONDecodeError:
+        parsed = None
     u = msg.usage
     rec = {
         "model_returned": msg.model,
         "message_id": msg.id,
         "stop_reason": msg.stop_reason,
-        "tool_input": tool_input,
+        "output_text": text,
+        "parsed": parsed,
         "label": None, "names_preference": None,
         "input_tokens": u.input_tokens,
         "output_tokens": u.output_tokens,
@@ -110,11 +123,13 @@ def summarize_message(msg):
         "cache_read_input_tokens": u.cache_read_input_tokens or 0,
         "error": None,
     }
-    if tool_input and tool_input.get("label") in LABELS and isinstance(tool_input.get("names_preference"), bool):
-        rec["label"] = tool_input["label"]
-        rec["names_preference"] = tool_input["names_preference"]
+    canon = {x.lower(): x for x in LABELS}   # enum values may come back with different capitalization
+    label = canon.get(str(parsed.get("label", "")).strip().lower()) if isinstance(parsed, dict) else None
+    if label and isinstance(parsed.get("names_preference"), bool):
+        rec["label"] = label
+        rec["names_preference"] = parsed["names_preference"]
     else:
-        rec["error"] = "invalid or missing tool input"
+        rec["error"] = f"invalid or missing JSON (stop_reason {msg.stop_reason})"
     return rec
 
 
@@ -160,7 +175,7 @@ def cmd_label(args):
     total = 0.0
     for i, row in enumerate(todo.itertuples(), 1):
         base = {"run": "validation", "sample_id": row.sample_id, "model_requested": args.model,
-                "prompt_sha256": prompt_hash()}
+                "prompt_sha256": prompt_hash(), **settings()}
         try:
             msg = client.messages.create(**request_params(args.model, row.reason))
             rec = {**base, **summarize_message(msg)}
@@ -282,7 +297,11 @@ def main():
         p = sub.add_parser(name)
         p.add_argument("--model", default="claude-haiku-5-5")
         p.add_argument("--xlsx", default=str(VALIDATION_XLSX), help="hand-labeled validation file")
+        p.add_argument("--thinking", choices=["between_tools", "adaptive"], default="between_tools",
+                       help="adaptive only if the model rejects between_tools")
     args = parser.parse_args()
+    global THINKING
+    THINKING = args.thinking
     {"label": cmd_label, "agreement": cmd_agreement}[args.command](args)
 
 

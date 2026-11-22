@@ -336,3 +336,15 @@
   discovery sample only, followed by one logged re-test on the validation sample.
 - Agreement will be reported with the caveat that the hand labels were partly revised after LLM
   suggestions.
+
+
+## 2026-11-21 Amendment to the labeler setup (before any labeling run)
+
+- Anthropic API version 2026-10-21 (default in the Python SDK 2.x) no longer accepts temperature,
+  and claude-sonnet-5-5 rejects forced tool choice. Changed before the first labeling call:
+  the label is constrained with structured outputs (output_config.format, JSON schema with the
+  codebook labels as an enum) instead of a forced tool; no temperature is sent, so labels are sampled
+  at the default temperature; thinking "between_tools" with effort "low" (fallback: adaptive).
+- The acceptance rule is unchanged.
+- Consequence: the labels are not deterministic. Labeling the same reason twice may give a different
+  label, which adds noise to the agreement estimate.
