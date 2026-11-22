@@ -348,3 +348,36 @@
 - The acceptance rule is unchanged.
 - Consequence: the labels are not deterministic. Labeling the same reason twice may give a different
   label, which adds noise to the agreement estimate.
+
+- Thinking setting per model: claude-haiku-5-5 rejects "between_tools"; used "<disabled>".
+  claude-sonnet-5-5: "between_tools". The setting is stored with every label record.
+
+
+## 2026-11-21 Reason analysis step 3: validation results and labeler choice
+
+- claude-haiku-5-5 (thinking disabled, prompt fe25ff54a191): 7 labels 85.0%, kappa 0.704
+  [0.573, 0.824]; merged 89.0%, kappa 0.773 [0.644, 0.889]; names_preference 96.0%, kappa 0.778.
+  Largest directed confusions: EV -> EV + risk averse (3), risk averse -> EV + risk averse (3).
+- claude-sonnet-5-5 (thinking between_tools, prompt 425f6ec9fefc): 7 labels 83.0%, kappa 0.674;
+  merged 87.0%, kappa 0.739 [0.608, 0.860]; names_preference 97.0%, kappa 0.826.
+- Both models meet the acceptance rule. Sonnet's merged kappa is not higher than Haiku's, so
+  claude-haiku-5-5 labels the full data (pre-set rule).
+- The lower CI bound of Haiku's merged kappa (0.644) is below 0.70; the rule used the point estimate.
+- The two models' confusion matrices are nearly identical, which suggests that most disagreements
+  come from the reasons, codebook boundaries or reference labels rather than from labeler noise.
+- Cost: Haiku ~$0.004, Sonnet $0.0591 for 100 reasons (with prompt caching).
+
+
+## 2026-11-21 Reason analysis step 3: revised reference labels (secondary)
+
+- Before the first LLM run, some validation labels were revised and the codebook refined, but the
+  revised file was not saved; the frozen file (validation_reasons.xlsx) predates these revisions.
+- After the LLM runs and after seeing the disagreement lists, the revisions were redone from memory in
+  results/reasons/validation_reasons_revised.xlsx (column describing each change; mostly slips and
+  reasons not read carefully in the first pass). Because this was done after seeing LLM labels, the
+  revised agreement is likely an overestimate and is reported as secondary only.
+- Revised reference: Haiku merged kappa 0.898 [0.797, 0.978] (95.0%); Sonnet 0.841 [0.728, 0.939]
+  (92.0%). Frozen reference (primary): Haiku 0.773, Sonnet 0.739. The labeler choice (Haiku) does
+  not change.
+- Remaining systematic disagreement: risk averse -> EV + risk averse (3, both models). "even when … average / expected value" mentioned in the reason
+  should be considered as "EV + risk averse". So the llm is in fact, more accurate. This was ignored during hand-labeling.

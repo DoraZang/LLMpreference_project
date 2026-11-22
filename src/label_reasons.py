@@ -13,7 +13,7 @@ Design notes:
     be one of the codebook labels and the flag only true/false, so no free-text parsing is needed.
   - Current Claude models (API version 2026-10-21) accept no temperature and no forced tool choice, so the
     labels are sampled at the default temperature (see lab log). Thinking is off by default
-    (thinking "between_tools", effort "low"); --thinking adaptive is the fallback if a model rejects it.
+    (effort "low"; --thinking between_tools / disabled / adaptive, because models differ in what they accept).
     No rationale field.
   - The full request setup (system text, schema, thinking and effort settings) is identified by a SHA-256
     hash stored with every record. If the codebook or a setting changes, the hash changes and earlier
@@ -28,6 +28,7 @@ import hashlib
 import json
 import os
 import random
+from pathlib import Path
 
 import anthropic
 import pandas as pd
@@ -94,7 +95,7 @@ def request_params(model, reason):
     return {
         "model": model,
         # adaptive thinking counts toward max_tokens, so it needs a much higher cap
-        "max_tokens": 300 if THINKING == "between_tools" else 4000,
+        "max_tokens": 4000 if THINKING == "adaptive" else 300,
         "thinking": {"type": THINKING},
         "system": [{"type": "text", "text": system_text(), "cache_control": {"type": "ephemeral"}}],
         "output_config": {"format": {"type": "json_schema", "schema": SCHEMA}, "effort": EFFORT},
@@ -172,7 +173,7 @@ def cmd_label(args):
     todo = df[~df["sample_id"].isin(done)]
     print(f"prompt {prompt_hash()[:12]} | {len(done)} already labeled, {len(todo)} to label")
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    total = 0.0
+    total, fails, rec = 0.0, 0, None
     for i, row in enumerate(todo.itertuples(), 1):
         base = {"run": "validation", "sample_id": row.sample_id, "model_requested": args.model,
                 "prompt_sha256": prompt_hash(), **settings()}
@@ -184,10 +185,13 @@ def cmd_label(args):
             rec = {**base, "error": f"{type(e).__name__}: {e}"}
         append_jsonl(labels_path("validation", args.model), rec)
         if rec["error"]:
-            print(f"  {row.sample_id}: ERROR {rec['error'][:200]}")
+            print(f"  {row.sample_id}: ERROR {rec['error'][:300]}")
+            fails += 1
+            if fails >= 3 and i == fails:
+                raise SystemExit("the first 3 calls all failed; stopping (fix the setup and re-run)")
         if i % 10 == 0 or i == len(todo):
             print(f"  {i}/{len(todo)} done, ~${total:.4f} so far")
-    if len(todo):
+    if rec and rec["error"] is None:
         last = rec
         print(f"last call: cache write {last.get('cache_creation_input_tokens')}, "
               f"cache read {last.get('cache_read_input_tokens')}, input {last.get('input_tokens')} tokens")
@@ -257,6 +261,7 @@ def cmd_agreement(args):
     lines = [
         f"# Validation agreement: hand labels vs {args.model}",
         "",
+        f"Reference file: {Path(args.xlsx).name}" + (f" (tag: {args.tag})" if args.tag else ""),
         f"Prompt hash {prompt_hash()[:12]}; {len(df)} reasons; 95% CIs from 2,000 bootstrap resamples of reasons.",
         "Hand labels: blind first pass, then partly revised after LLM suggestions (original labels not kept),",
         "so agreement may be inflated.",
@@ -280,12 +285,14 @@ def cmd_agreement(args):
         pd.crosstab(pd.Series(flag_ref, name="hand"), pd.Series(flag_llm, name="LLM")).to_markdown(),
     ]
     out_dir = ROOT / "results" / "reasons"
-    report = out_dir / f"validation_agreement_{args.model}.md"
+    suffix = f"_{args.tag}" if args.tag else ""
+    report = out_dir / f"validation_agreement_{args.model}{suffix}.md"
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
     dis = df[(df["label"] != df["llm_label"]) | (df["names_preference"] != df["llm_flag"])]
-    dis_path = out_dir / f"validation_disagreements_{args.model}.csv"
-    dis[["sample_id", "reason", "label", "llm_label", "names_preference", "llm_flag", "notes"]].to_csv(
-        dis_path, index=False, encoding="utf-8-sig")
+    dis_path = out_dir / f"validation_disagreements_{args.model}{suffix}.csv"
+    first = ["sample_id", "reason", "label", "llm_label", "names_preference", "llm_flag"]
+    cols = first + [c for c in dis.columns if c not in first]   # keeps notes / revision columns if present
+    dis[cols].to_csv(dis_path, index=False, encoding="utf-8-sig")
     print("\n".join(lines))
     print(f"\nwrote {report.relative_to(ROOT)} and {dis_path.relative_to(ROOT)} ({len(dis)} disagreements)")
 
@@ -297,8 +304,10 @@ def main():
         p = sub.add_parser(name)
         p.add_argument("--model", default="claude-haiku-5-5")
         p.add_argument("--xlsx", default=str(VALIDATION_XLSX), help="hand-labeled validation file")
-        p.add_argument("--thinking", choices=["between_tools", "adaptive"], default="between_tools",
-                       help="adaptive only if the model rejects between_tools")
+        if name == "agreement":
+            p.add_argument("--tag", default="", help="suffix for the output files, e.g. revised")
+        p.add_argument("--thinking", choices=["between_tools", "disabled", "adaptive"],
+                       default="between_tools", help="thinking setting; models differ in what they accept")
     args = parser.parse_args()
     global THINKING
     THINKING = args.thinking

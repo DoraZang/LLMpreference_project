@@ -1,0 +1,18 @@
+﻿sample_id,reason,label,llm_label,names_preference,llm_flag,notes
+V004,"I chose A where the average of the two possible outcomes is positive, and the sure $0 otherwise.",vague tradeoff,EV,False,False,
+V010,"I prefer the guaranteed outcome in each row where it avoids some chance of a larger loss, even when it is slightly worse than the lottery’s average. In Row 7, the lottery is at least as good as the sure loss and sometimes better.",risk averse,EV + risk averse,False,False,
+V018,"I avoid gambles where the potential $1,000 loss is too large relative to the upside. I accept only the options with substantially larger potential gains.",risk averse,vague tradeoff,False,False,
+V022,"The lottery has an expected loss of $950, so I prefer the guaranteed loss whenever it is smaller. At $1,000, the sure loss and lottery have equal expected value, and I prefer the lottery’s chance of losing less.",EV,risk seeking,False,False,
+V029,"I prefer the certainty of receiving $0 over the risk of losing money, even when a lottery has a positive expected value.",risk averse,EV + risk averse,False,False,
+V040,"I prefer the guaranteed amount in every row because I dislike uncertainty, even when the lottery has a higher average payoff.",risk averse,EV + risk averse,True,True,
+V049,I prefer the guaranteed $0 because each lottery has a 50% chance of losing $599.,EV + risk averse,risk averse,False,False,
+V053,"I chose the lottery when its possible loss felt small enough relative to the potential gain, and the sure $0 when the loss felt too large.",risk seeking,vague tradeoff,False,False,
+V054,"The lottery has an expected value of $920, so I choose the sure amount when it is $1000 and the lottery for all lower sure amounts.",EV,risk averse,False,False,
+V055,"I chose the guaranteed $0 for most rows because I prefer certainty, but took the lottery when its potential payoff was large enough to justify the risk.",EV + risk averse,vague tradeoff,True,False,
+V060,"I prefer the guaranteed amounts to avoid the lottery’s uncertainty, especially when they are near or above its expected value of $280. At $200, the lottery is preferable because it never pays less and sometimes pays more.",EV,EV + risk averse,True,False,maybe also slightly risk averse
+V067,"The lottery’s expected value is $950, so I chose it over guaranteed amounts below $950, and chose the equal $1000 sure amount in Row 8 to avoid risk.",EV,EV + risk averse,False,False,
+V071,"The lottery has an expected value of $9.20, and all outcomes are gains. I prefer the lottery to the sure amounts offered, even accounting for loss aversion.",EV,risk seeking,True,True,this is EV + risk seeking
+V078,"The lottery has an expected loss of $550, but because losses loom larger than gains, I prefer the sure loss when it is relatively close to that amount. For larger sure losses, I choose the lottery to retain a chance of losing less.",EV,EV + risk averse,False,True,maybe it's also loss averse
+V087,"I chose B when its expected value was positive and sufficiently large to justify the risk, and A for the smaller positive expected values where avoiding a loss seemed preferable.",vague tradeoff,EV + risk averse,False,False,not sure
+V093,"The lottery has an expected loss of $280, but I’m loss-averse, so I prefer a sure loss when it is relatively small. For larger sure losses, I prefer the lottery’s 90% chance of losing only $200.",EV + risk averse,loss averse,True,True,mentioned loss averse but it's actually risk averse
+V098,"This maximizes expected monetary value, choosing the lottery when its expected payoff is positive and the guaranteed $0 otherwise.",vague tradeoff,EV,False,False,not sure
