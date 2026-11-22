@@ -415,3 +415,17 @@
 - The validation sample was not used for this revision.
 - Analysis note for step 4: loss averse labels on gain and loss items are read as risk aversion
   expressed with the words "loss averse"; recoding is done by item type at the analysis stage.
+
+## 2026-11-22 Validation of the revised codebook and deviation from the acceptance rule
+
+- Revised prompt (hash 43055e282748), claude-haiku-5-5, thinking disabled. Frozen reference:
+  7 labels 84.0%, kappa 0.688; merged 88.0%, kappa 0.755 [0.628, 0.875]; names_preference kappa
+  0.709. Revised reference: merged 94.0%, kappa 0.879.
+- Deviation: on the frozen reference, the largest directed confusion (EV -> EV + risk averse) is 4,
+  one above the pre-set limit of 3 (the first codebook version had 3). On the revised reference
+  the limit is met.
+- Decision: use the revised codebook anyway. Reasons: (1) the clarified rules concern reasons that
+  do not occur in the validation sample, and the label distributions of the two versions are almost
+  identical; (2) the difference (one reason) is within labeler noise (re-labeling check: 96% same
+  label); (3) the first version has a large systematic error in the full data (other, risk seeking)
+  that the validation sample cannot detect. The deviation will be reported.
