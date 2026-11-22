@@ -26,12 +26,18 @@ def main():
     parser.add_argument("--labels", default="reason_labels_main_claude-haiku-5-5.csv")
     parser.add_argument("--check", nargs="+", default=["other", "risk seeking", "loss averse"])
     parser.add_argument("--n", type=int, default=20, help="distinct reason texts per label")
+    parser.add_argument("--exclude", nargs="*", default=[],
+                        help="earlier spot-check files whose reason texts must not be drawn again")
+    parser.add_argument("--out", default="spotcheck_rare_labels.csv")
     args = parser.parse_args()
 
     df = pd.read_csv(ROOT / "results" / "reasons" / args.labels, encoding="utf-8-sig")
+    seen = set()
+    for name in args.exclude:
+        seen |= set(pd.read_csv(ROOT / "results" / "reasons" / name, encoding="utf-8-sig")["reason"])
     rows = []
     for label in args.check:
-        sub = df[df["label"] == label]
+        sub = df[(df["label"] == label) & ~df["reason"].isin(seen)]
         texts = sub.drop_duplicates("text_id")
         pick = texts.sample(n=min(args.n, len(texts)), random_state=SEED)
         print(f"{label}: {len(sub)} responses, {len(texts)} distinct texts, "
@@ -44,7 +50,7 @@ def main():
     out["agree"] = ""
     out["correct_label"] = ""
     out["note"] = ""
-    path = ROOT / "results" / "reasons" / "spotcheck_rare_labels.csv"
+    path = ROOT / "results" / "reasons" / args.out
     out.to_csv(path, index=False, encoding="utf-8-sig")
     print(f"wrote {path.relative_to(ROOT)} ({len(out)} rows)")
 
