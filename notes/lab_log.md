@@ -396,3 +396,22 @@
   7.6%, loss averse 2.7%, other 0.5%, risk seeking 0.3%.
 - other, risk seeking and loss averse were barely present in the validation sample; their accuracy
   is not established by the agreement statistics.
+
+
+## 2026-11-22 Codebook revision after spot check of rare labels (before re-labeling)
+
+- Spot check of 60 full-run labels (20 distinct texts each of other, risk seeking, loss averse;
+  results/reasons/spotcheck_rare_labels.csv). Systematic error: reasons that choose the sure option in
+  every row except a dominated row ("I prefer the guaranteed outcome over a lottery. In Row 12, the
+  lottery is better because ...") were labeled other (about 19 of 20 other labels wrong) or risk
+  seeking (about 5 of 20). loss averse labels mostly follow the codebook; 11 of 20 come from pure gain
+  or pure loss items.
+- Codebook clarified (no label definition changed): always choosing the same kind of option is a
+  usable rule, never other; choosing the lottery only in dominated rows is not risk seeking; examples
+  added. The examples come from the spot-check sample, so a second spot check excludes those texts.
+- Next: re-run the validation sample with the revised prompt (same acceptance rule), then re-label
+  the full data. Labels from the first codebook version stay in data/labels/ under their own prompt
+  hash and are not mixed with the new ones.
+- The validation sample was not used for this revision.
+- Analysis note for step 4: loss averse labels on gain and loss items are read as risk aversion
+  expressed with the words "loss averse"; recoding is done by item type at the analysis stage.
