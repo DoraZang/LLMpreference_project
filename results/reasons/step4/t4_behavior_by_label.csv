@@ -1,0 +1,36 @@
+﻿mode,item_type,label,n,mean_outcome,share_ev_consistent
+high,gain,EV,1192,0.0047,0.9413
+high,gain,EV + risk averse,209,0.1248,0.0909
+high,gain,other,13,0.0755,0.1538
+high,gain,risk averse,84,0.1834,0.0357
+high,gain,risk seeking,3,0.0787,0.3333
+high,gain,vague tradeoff,229,0.0939,0.1485
+high,loss,EV,1317,0.0044,0.9651
+high,loss,EV + risk averse,265,0.1217,0.083
+high,loss,other,1,0.0181,1.0
+high,loss,risk averse,155,0.2041,0.0065
+high,loss,vague tradeoff,32,0.1403,0.1875
+high,mixed,EV,900,0.0576,0.93
+high,mixed,EV + risk averse,96,1.1755,0.0
+high,mixed,loss averse,43,0.7113,0.0
+high,mixed,risk averse,137,1.5919,0.0
+high,mixed,vague tradeoff,615,0.7366,0.0033
+none,gain,EV,4233,-0.0802,0.3114
+none,gain,EV + risk averse,675,0.032,0.2
+none,gain,loss averse,8,0.1114,0.25
+none,gain,other,11,-0.0413,0.0
+none,gain,risk averse,36,0.3253,0.0
+none,gain,risk seeking,4,-0.4092,0.0
+none,gain,vague tradeoff,14,-0.0065,0.0714
+none,loss,EV,3355,0.1295,0.2331
+none,loss,EV + risk averse,536,0.3028,0.1157
+none,loss,loss averse,143,0.2537,0.049
+none,loss,other,8,0.2863,0.25
+none,loss,risk averse,123,0.3872,0.0081
+none,loss,vague tradeoff,3,0.1395,0.3333
+none,mixed,EV,3919,0.1387,0.6742
+none,mixed,EV + risk averse,387,0.9452,0.23
+none,mixed,loss averse,349,1.1128,0.0774
+none,mixed,other,3,0.1093,0.6667
+none,mixed,risk averse,957,1.5992,0.0
+none,mixed,vague tradeoff,1398,0.4324,0.2604

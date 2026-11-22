@@ -1,0 +1,26 @@
+﻿mode,condition,item_type,n,EV,risk averse,loss averse,risk seeking,vague tradeoff,other
+high,direct_loss_tech,gain,1,0.0,1.0,0.0,0.0,0.0,0.0
+high,direct_risk_plain,gain,31,0.0,1.0,0.0,0.0,0.0,0.0
+high,direct_risk_plain,loss,21,0.0,1.0,0.0,0.0,0.0,0.0
+high,direct_risk_tech,gain,1,0.0,1.0,0.0,0.0,0.0,0.0
+high,oneshot_loss,loss,1,0.0,1.0,0.0,0.0,0.0,0.0
+none,baseline,gain,121,0.8017,0.1405,0.0,0.0579,0.0,0.0
+none,baseline,loss,45,0.6222,0.3778,0.0,0.0,0.0,0.0
+none,cot,gain,5,0.8,0.2,0.0,0.0,0.0,0.0
+none,cot,loss,6,0.8333,0.1667,0.0,0.0,0.0,0.0
+none,direct_loss_plain,gain,159,0.3333,0.5157,0.0,0.1321,0.0063,0.0126
+none,direct_loss_plain,loss,118,0.1271,0.8475,0.0,0.0085,0.0,0.0169
+none,direct_loss_tech,gain,282,0.195,0.773,0.0,0.0248,0.0,0.0071
+none,direct_loss_tech,loss,259,0.0154,0.9846,0.0,0.0,0.0,0.0
+none,direct_risk_plain,gain,625,0.0,1.0,0.0,0.0,0.0,0.0
+none,direct_risk_plain,loss,527,0.0076,0.9924,0.0,0.0,0.0,0.0
+none,direct_risk_tech,gain,335,0.0627,0.9343,0.0,0.0,0.0,0.003
+none,direct_risk_tech,loss,344,0.1134,0.8837,0.0,0.0,0.0,0.0029
+none,ev_hint,gain,20,0.8,0.2,0.0,0.0,0.0,0.0
+none,ev_hint,loss,40,0.55,0.45,0.0,0.0,0.0,0.0
+none,oneshot_gain,gain,31,0.6774,0.2903,0.0,0.0323,0.0,0.0
+none,oneshot_gain,loss,47,0.5106,0.4681,0.0,0.0,0.0,0.0213
+none,oneshot_loss,gain,97,0.7629,0.1649,0.0,0.0722,0.0,0.0
+none,oneshot_loss,loss,68,0.7941,0.1765,0.0,0.0,0.0,0.0294
+none,oneshot_mixed,gain,60,0.8833,0.0833,0.0,0.0333,0.0,0.0
+none,oneshot_mixed,loss,56,0.6786,0.3214,0.0,0.0,0.0,0.0

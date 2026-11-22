@@ -429,3 +429,28 @@
   identical; (2) the difference (one reason) is within labeler noise (re-labeling check: 96% same
   label); (3) the first version has a large systematic error in the full data (other, risk seeking)
   that the validation sample cannot detect. The deviation will be reported.
+
+
+## 2026-11-22 Reason analysis step 4: results (exploratory)
+
+- Script: src/reason_analysis.py; tables in results/reasons/step4/. Labels: main_v2 (Haiku, revised
+  codebook). Groups: EV + risk averse and risk averse merged; loss averse on gain/loss items read as
+  risk averse; other shown but not interpreted.
+- Intent: direct instructions replace EV rules with risk-averse rules (mode none, direct_risk_plain:
+  EV -87 pp in all item types; direct_risk_tech: about -50 pp). Risk instructions on mixed items give
+  risk-averse rules (+51 / +80 pp), which explains the rise of the loss-aversion ratio.
+- Execution: among reasons stating an EV rule, behavior is EV-consistent in 94% / 97% / 93% of valid
+  responses (gain / loss / mixed) in mode high, but only 31% / 23% / 67% in mode none. Baseline
+  deviations from EV in mode none are mainly execution errors, not stated preferences. CoT and the EV
+  hint leave the stated rules unchanged on gain/loss items but move behavior toward EV.
+- Loss instructions on mixed items mostly give vague tradeoff reasons (mode none +49 to +71 pp; mode
+  high +86 to +91 pp); explicit loss averse only +7 to +25 pp. On mixed items vague tradeoff is an
+  unquantified gain-loss weighing, i.e. unstated loss aversion.
+- Two readings of "loss averse": on gain items some flagged reasons state that loss aversion does not
+  apply and use an EV rule (17-26% of flagged reasons in mode none); most read it as avoiding losses
+  or uncertainty (risk-averse rules), the mechanism of the spillover of direct_loss_tech.
+- Dominance violations: under direct instructions they state risk-averse rules (77-100%), i.e. a
+  deliberate avoid-any-lottery rule (extensive margin); without instructions they mostly state EV
+  rules (51-88%), i.e. execution errors.
+- Caveats: reasons are written after the answers and may be rationalizations; behavior is only
+  defined for valid responses; 95% CIs without multiplicity adjustment.
