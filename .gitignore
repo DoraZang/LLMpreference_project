@@ -14,3 +14,8 @@ data/batch/*/requests_*.jsonl
 data/batch/*/output_*.jsonl
 data/batch/*/errors_*.jsonl
 data/raw/simrecovery.jsonl
+# Excel lock files
+~$*
+
+# Extra virtual environments
+.venv*/

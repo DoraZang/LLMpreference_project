@@ -26,9 +26,17 @@ not excluded; each gets the switch point of the closest consistent pattern (fewe
 several are equally close, their values are averaged). Parse failures stay excluded. Outputs are
 written with the suffix _S1, so the pre-registered primary results are not overwritten.
 
+Sensitivity analyses S3-S6 (--subset; pre-registration Section 8), written with the suffix _<subset>:
+  S3  moderate_p (p = 0.3, 0.5, 0.7; gain/loss) and extreme_p (p = 0.1, 0.9; gain/loss)
+  S4  version1, version2 (each label version alone instead of the mean of both)
+  S5  mixed_A, mixed_B (mixed items by elicitation direction)
+  S6  uncensored (mixed items; censored responses excluded like invalid ones)
+S2 (EV-normalized risk premium) is the rp_ev outcome in the main output.
+
 Usage:
   python src/analyze_main.py --run main
   python src/analyze_main.py --run main --include-invalid      # sensitivity analysis S1
+  python src/analyze_main.py --run main --subset moderate_p    # S3 (likewise extreme_p, version1, ...)
 """
 
 import argparse
@@ -146,8 +154,9 @@ def outcome_value(res, outcome):
     raise ValueError(outcome)
 
 
-def item_values(results):
-    """{(mode, condition, item_type, outcome): {item_id: value}} following steps 2-3."""
+def item_values(results, versions=(1, 2)):
+    """{(mode, condition, item_type, outcome): {item_id: value}} following steps 2-3.
+    versions: the label versions averaged per item (S4 uses one version alone)."""
     groups = defaultdict(list)    # (mode, condition, item_id, version) -> results
     types = {}
     for res in results:
@@ -163,20 +172,44 @@ def item_values(results):
         per_prompt[key] = (len(valid), vals)
 
     values = defaultdict(dict)
-    for (mode, condition, item_id, version) in per_prompt:
-        if version != 1:
-            continue
-        v1 = per_prompt.get((mode, condition, item_id, 1))
-        v2 = per_prompt.get((mode, condition, item_id, 2))
-        if v1 is None or v2 is None:
+    for (mode, condition, item_id) in {k[:3] for k in per_prompt}:
+        vs = [per_prompt.get((mode, condition, item_id, v)) for v in versions]
+        if any(v is None for v in vs):
             continue
         item_type = types[item_id]
         for outcome in OUTCOMES[item_type]:
             if outcome == "valid":
-                values[(mode, condition, item_type, outcome)][item_id] = (v1[1]["valid"] + v2[1]["valid"]) / 2
-            elif v1[0] >= MIN_VALID and v2[0] >= MIN_VALID:
-                values[(mode, condition, item_type, outcome)][item_id] = (v1[1][outcome] + v2[1][outcome]) / 2
+                values[(mode, condition, item_type, outcome)][item_id] = mean(v[1]["valid"] for v in vs)
+            elif all(v[0] >= MIN_VALID for v in vs):
+                values[(mode, condition, item_type, outcome)][item_id] = mean(v[1][outcome] for v in vs)
     return values
+
+
+SUBSETS = ["moderate_p", "extreme_p", "version1", "version2", "mixed_A", "mixed_B", "uncensored"]
+
+
+def apply_subset(results, subset):
+    """Restrict the results for sensitivity analyses S3-S6; returns (results, versions)."""
+    if subset is None or subset.startswith("version"):
+        return results, ((1, 2) if subset is None else (int(subset[-1]),))
+    items = {it["item_id"]: it for it in load_items()}
+    if subset in ("moderate_p", "extreme_p"):
+        ps = (0.3, 0.5, 0.7) if subset == "moderate_p" else (0.1, 0.9)
+        keep = [r for r in results if r["item_type"] != "mixed"
+                and any(abs(items[r["item_id"]]["p_high"] - p) < 1e-9 for p in ps)]
+    elif subset in ("mixed_A", "mixed_B"):
+        keep = [r for r in results if r["item_id"].startswith(subset + "_")]
+    elif subset == "uncensored":
+        keep = []
+        for r in results:
+            if r["item_type"] != "mixed":
+                continue
+            if r["status"] == "valid" and r["censored"]:
+                r = {**r, "status": "censored_excluded"}
+            keep.append(r)
+    else:
+        raise ValueError(subset)
+    return keep, (1, 2)
 
 
 def quantile(sorted_vals, q):
@@ -214,10 +247,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", default="main")
     parser.add_argument("--include-invalid", action="store_true", help="sensitivity analysis S1")
+    parser.add_argument("--subset", choices=SUBSETS, default=None, help="sensitivity analyses S3-S6")
     args = parser.parse_args()
     results = load_results(args.run, include_invalid=args.include_invalid)
-    suffix = "_S1" if args.include_invalid else ""
-    values = item_values(results)
+    results, versions = apply_subset(results, args.subset)
+    suffix = ("_S1" if args.include_invalid else "") + (f"_{args.subset}" if args.subset else "")
+    n_items = {t: len({r["item_id"] for r in results if r["item_type"] == t}) for t in OUTCOMES}
+    values = item_values(results, versions)
     rng = random.Random(SEED)
     primary_keys = {(m, c, t, o): pid for pid, m, c, t, o, _ in PRIMARY}
 
@@ -241,7 +277,7 @@ def main():
         rows.append({
             "primary": pid or "", "mode": mode, "condition": condition, "item_type": item_type,
             "outcome": outcome, "prediction": pred, "n_items": len(common),
-            "n_excluded": 20 - len(common),
+            "n_excluded": n_items[item_type] - len(common),
             "estimate": round(est, 4),
             "estimate_steps": round(est / STEP[outcome], 2) if STEP[outcome] else "",
             "ci95_low": round(cis[0.95][0], 4), "ci95_high": round(cis[0.95][1], 4),
@@ -270,6 +306,8 @@ def main():
 
     print(f"{len(results)} responses analyzed; {len(rows)} contrasts written to {out_dir}\n")
     label = "S1 sensitivity analysis (invalid responses included)" if args.include_invalid else "Primary contrasts"
+    if args.subset:
+        label += f", subset {args.subset}"
     print(f"{label} (decision on Bonferroni-adjusted {ADJ_LEVEL:.2%} CI):")
     print(f"{'ID':<5}{'mode':<6}{'condition':<19}{'type':<7}{'pred':<6}{'items':>6}{'est (steps)':>12}"
           f"{'adjusted CI':>22}   conclusion")

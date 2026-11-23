@@ -3,153 +3,146 @@
 A pre-registered revisit and extension of Section 4 of Ross, Kim & Lo (2024),
 [*"LLM economicus? Mapping the Behavioral Biases of LLMs via Utility Theory"*](https://arxiv.org/abs/2408.02784).
 
-**Status:** main experiment collected and analyzed (pre-registered primary results below). Reason analysis
-(RQ3) and the write-up are in progress.
+**Status:** complete. Full write-up: [`docs/report.md`](docs/report.md).
 
----
+The original paper found that telling GPT-4 to be risk or loss averse, or asking it to think step by step,
+did not reliably change its choices in a gambling game, while a one-shot example did. This project asks
+the same question of a current model (`gpt-6-luna`), with built-in reasoning off and on, in a design
+that was pre-registered before any main data were collected, and it also analyzes the reason the model
+gives for each set of choices.
 
-## Motivation
+## Key findings
 
-Ross, Kim & Lo fit utility functions to LLM choices in classic behavioral-economics games. In Section 4 they ask
-whether prompting can shift GPT-4's risk and loss aversion in a gambling game, and conclude that only one-shot
-prompting reliably changes behavior. This project revisits that question because of several limitations:
+1. **Direct instructions work; one-shot examples mostly do not.** "You are risk averse" raises the
+   gain-item risk premium by 1.6 option steps and "You are loss averse" raises the loss-aversion ratio
+   on mixed gambles by 3.3 steps, with and without reasoning. Of the one-shot examples, only the gain
+   example works without reasoning (the reverse of the original paper's result).
+2. **Without reasoning, instructions spill over to measures they do not target; with reasoning, much
+   less.** "Loss averse" also makes the non-reasoning model risk averse on pure gain and pure loss
+   lotteries. With reasoning on, the same instruction moves mainly the mixed-gamble measure.
+3. **The model often reads "loss averse" as "avoid losses, prefer certainty".** Its stated reasons show
+   this everyday reading on gain and loss items, which explains the spillover. With reasoning, the
+   textbook reading ("loss aversion does not apply when all outcomes are gains") dominates.
+4. **Without reasoning, the model says it maximizes expected value but often does not.** When the
+   stated rule is expected value, the choices match it in 23-67% of valid responses without reasoning
+   and in 93-97% with reasoning. Chain of thought and an explicit expected-value hint move behavior
+   toward expected value: they fix execution, not intent.
 
-1. **Loss aversion was not identifiable.** The original infers and teaches loss aversion with pure-loss lotteries.
-   In prospect theory, the loss-aversion coefficient λ cancels out of the indifference condition for pure-loss
-   gambles, so those choices identify only loss-domain curvature. λ can only be identified from **mixed**
-   lotteries (a chance to gain and a chance to lose in the same gamble), which this project adds.
-2. **Small samples, no uncertainty.** One model, N = 10 samples per setting, no parameter estimates or
-   confidence intervals.
+![Effects of each intervention on every measure](results/figures/fig2_effect_matrix.png)
+
+*Change versus baseline in option steps. Outlined cells are the measures each intervention targets;
+`*` marks no meaningful effect or an inconclusive result.*
+
+## Why revisit the original study
+
+1. **Loss aversion was not identifiable.** The original infers and teaches loss aversion with pure-loss
+   lotteries. In prospect theory the loss-aversion coefficient λ cancels out of the indifference
+   condition for pure-loss gambles, so those choices identify only loss-domain curvature. λ is
+   identified only by **mixed** lotteries (a chance to gain and a chance to lose in the same gamble),
+   which this project adds.
+2. **Small samples, no uncertainty.** One model, 10 samples per setting, no confidence intervals.
 3. **Older models only**, and no comparison with built-in reasoning.
 4. **Most intervention prompts were not published.**
-5. **The models' stated reasons were collected but never analyzed.**
+5. **The models' stated reasons were collected but not analyzed.**
 
 ## Research questions
 
 - **RQ1.** Can prompting shift an LLM's risk aversion and loss aversion?
-- **RQ2.** When a prompt shifts behavior, does it move the targeted measure without moving the others?
+- **RQ2.** Does a prompt move the targeted measure without moving the others?
 - **RQ3.** Why do interventions succeed or fail, judging from both choices and stated reasons?
-- **RQ4.** Does reasoning (no reasoning, prompted chain of thought, built-in reasoning) change preferences and
+- **RQ4.** Does reasoning (none vs. built-in, and prompted chain of thought) change preferences and
   intervention effects?
 
 ## Design
 
-Full details are in [`docs/preregistration.md`](docs/preregistration.md), committed before the main experiment ran.
+Full details: [`docs/preregistration.md`](docs/preregistration.md), committed before the main experiment ran.
 
-- **Model:** `gpt-6-luna` (OpenAI Responses API), in two modes: `reasoning_effort = "none"` (temperature 1) and
-  `reasoning_effort = "high"`.
-- **Items (60, generated by [`src/items.py`](src/items.py)):**
-  - 20 gain lotteries: probability p ∈ {0.1, 0.3, 0.5, 0.7, 0.9} × stake ∈ {$10, $1000} × low/high ratio ∈ {0.2, 0.5}
-  - 20 loss lotteries: the gain lotteries with amounts negated
-  - 20 mixed lotteries: 50% win G / 50% lose L, two elicitation directions (vary G or vary L) × 10 log-spaced amounts
-- **Format:** 12 rows per item, each a binary choice between the lottery and a sure amount. Rows are shuffled on
-  every call, labels are counterbalanced across two prompt versions, and the expected value is not shown.
-- **Outcomes:**
-  - Gain/loss items: range-normalized risk premium, (EV − CE) / |x_high − x_low| (positive = risk-averse)
-  - Mixed items: log of the gain/loss ratio at which the model starts accepting (a model-free proxy for λ)
-  - Valid rate: share of responses that parse, switch at most once, and respect dominance at the endpoints
-- **Conditions (9 + 1 supplementary):**
+- **Model:** `gpt-6-luna` (OpenAI Responses API), `reasoning_effort = "none"` (temperature 1) and `"high"`.
+- **Items (60, [`src/items.py`](src/items.py)):** 20 gain lotteries (p in {0.1, ..., 0.9} x stake {$10, $1000} x
+  low/high ratio {0.2, 0.5}), the same 20 negated as loss lotteries, and 20 mixed lotteries (50% win G /
+  50% lose L; gain or loss varied). Each item is a 12-row list of choices between the lottery and a sure
+  amount; rows are shuffled on every call, labels are counterbalanced, and the expected value is not shown.
+- **Conditions:** baseline; "risk averse" and "loss averse" instructions, each in technical and plain wording;
+  one-shot gain, loss and mixed examples; chain of thought; and an expected-value hint (supplementary).
+  Texts in [`prompts/`](prompts/).
+- **Outcomes:** range-normalized risk premium (gain and loss items; positive = risk averse), log of the
+  switching gain/loss ratio (mixed items), and the share of valid responses.
+- **Sample:** 28,600 responses (20 per prompt without reasoning, 5 with), collected through the Batch API with
+  all conditions mixed in every batch.
+- **Analysis:** per-item paired differences from baseline, item-level bootstrap (10,000 resamples); 12 primary
+  contrasts with Bonferroni-adjusted intervals; smallest effect of interest = half an option step.
+- **Reason analysis (exploratory):** a codebook built from 112 reasons ([`docs/reason_codebook.md`](docs/reason_codebook.md)),
+  validated on 100 hand-labeled reasons, applied to all 28,600 reasons by Claude Haiku 5.5.
 
-  | Condition | Intervention | Target |
-  |---|---|---|
-  | `baseline` | none | — |
-  | `direct_risk_tech` / `direct_risk_plain` | "you are risk averse" (technical / plain language) | risk aversion |
-  | `oneshot_gain` | one demonstrated gain item | risk aversion |
-  | `direct_loss_tech` / `direct_loss_plain` | "you are loss averse" (technical / plain language) | loss aversion |
-  | `oneshot_loss` | one demonstrated pure-loss item (the original paper's approach) | loss aversion |
-  | `oneshot_mixed` | one demonstrated mixed item | loss aversion |
-  | `cot` | "Let's think step by step" with a reasoning-first answer format | — |
-  | `ev_hint` (supplementary) | expected value stated in the prompt | — |
-
-  One-shot examples use numbers that differ from every test item, so copying the switch position and adopting
-  the preference give different results.
-- **Sample:** 28,600 responses (20 samples per prompt in "none", 5 in "high"), collected through the OpenAI Batch API
-  with all conditions mixed within every batch.
-- **Analysis:** the item is the unit of analysis. Each intervention is compared with baseline by paired per-item
-  differences, with item-level bootstrap CIs (10,000 resamples). The 12 pre-registered primary contrasts use
-  Bonferroni-adjusted intervals (1 − 0.05/12). The smallest effect of interest is half an option step.
-- **Validation:** before the main run, [`src/simulate_recovery.py`](src/simulate_recovery.py) simulated a full run
-  with known effects to check that the analysis recovers them.
-
-## Main results (pre-registered primary contrasts)
-
-Effects are relative to baseline in the same reasoning mode, in option steps (half a step is the smallest effect
-of interest).
+## Pre-registered results
 
 | ID | Mode | Condition | Measure | Predicted | Estimate (steps) | Conclusion |
 |---|---|---|---|---|---|---|
 | P1 | none | `direct_risk_tech` | Gain RP | up | +1.63 | as predicted |
-| P2 | none | `direct_risk_plain` | Gain RP | up | +3.59 | as predicted (only 5 of 20 items usable) |
+| P2 | none | `direct_risk_plain` | Gain RP | up | +3.59 | as predicted (5 of 20 items usable) |
 | P3 | none | `oneshot_gain` | Gain RP | up | +1.21 | as predicted |
 | P4 | none | `direct_loss_tech` | Mixed ratio | up | +3.28 | as predicted |
 | P5 | none | `direct_loss_plain` | Mixed ratio | up | +1.61 | as predicted |
 | P6 | none | `oneshot_mixed` | Mixed ratio | up | +0.19 | inconclusive |
-| P7 | none | `oneshot_loss` | Loss RP | up | −0.02 | inconclusive |
-| P8 | none | `oneshot_loss` | Mixed ratio | no change | −0.26 | inconclusive (rules out a meaningful increase) |
+| P7 | none | `oneshot_loss` | Loss RP | up | -0.02 | inconclusive |
+| P8 | none | `oneshot_loss` | Mixed ratio | no change | -0.26 | inconclusive (rules out a meaningful increase) |
 | P9 | none | `cot` | Gain RP | up | +1.20 | as predicted |
-| P10 | none | `cot` | Loss RP | down | −1.38 | as predicted |
+| P10 | none | `cot` | Loss RP | down | -1.38 | as predicted |
 | P11 | high | `direct_risk_tech` | Gain RP | up | +1.12 | as predicted |
 | P12 | high | `direct_loss_tech` | Mixed ratio | up | +3.69 | as predicted |
 
-**9 of 12 effects as predicted, 3 inconclusive, none in the opposite direction.**
-
-Takeaways so far:
-
-- **Direct instructions work, in both reasoning modes.** Telling the model it is risk averse or loss averse moves
-  the targeted measure, and the reasoning model, which is otherwise close to expected-value maximizing, follows
-  them too.
-- **The original paper's one-shot approach does not replicate here.** Neither the pure-loss nor the mixed
-  demonstration produced a clear effect.
-- **Without reasoning, the baseline is risk-seeking for gains and risk-averse for losses** (the reverse of the
-  typical human pattern). Prompted chain of thought moves both toward risk neutrality.
-- **Direct risk instructions partly produce a rule rather than a preference.** Valid rates collapse under them
-  (e.g. 73% → 14% on gain items for `direct_risk_plain`), almost entirely because the model "always takes the sure
-  amount," which violates stochastic dominance. The primary analysis therefore underestimates these effects.
-  Sensitivity analysis S1, which re-includes these responses, leaves all 12 conclusions unchanged and enlarges
-  the risk-instruction effects (P2: +3.59 → +5.95 steps, on all 20 items).
-
-Tables: [`results/tables/main_contrasts.csv`](results/tables/main_contrasts.csv),
-[`results/tables/main_levels.csv`](results/tables/main_levels.csv), and their `_S1` versions.
-Decisions and deviations are logged in [`notes/lab_log.md`](notes/lab_log.md).
+Nine of twelve as predicted, three inconclusive, none in the opposite direction. The conclusions of
+P1-P5, P7 and P10-P12 hold in every pre-registered sensitivity analysis; the weak one-shot effects
+(P6, P8) depend on how the mixed gambles are elicited. Deviations from the pre-registration are listed
+in the report (Section 4) and logged with dates in [`notes/lab_log.md`](notes/lab_log.md).
 
 ## Repository layout
 
 ```
-docs/          project plan and pre-registration
-notes/         lab log: every design decision and deviation, with dates
-prompts/       system and user templates; prompts/interventions/ holds intervention texts
-data/items/    the 60 generated items
-data/raw/      raw responses (JSONL), with everything needed to rebuild each prompt
-data/batch/    Batch API metadata for each run
-src/           item generation, prompt building, API calls, parsing, analysis
-results/       output tables (and figures, to come)
+docs/                 pre-registration, report, reason codebook, original project plan
+notes/lab_log.md      every design decision and deviation, with dates
+prompts/              system and user templates; prompts/interventions/ holds the intervention texts
+data/items/           the 60 generated items
+data/raw/             raw model responses (JSONL), with everything needed to rebuild each prompt
+data/batch/           Batch API metadata
+data/labels/          LLM labels of the reasons (raw records)
+src/                  item generation, prompts, API calls, parsing, analysis, labeling, figures
+results/tables/       contrast and level tables (primary, S1-S6, sensitivity summary)
+results/reasons/      reason samples, hand labels, validation, spot checks, step4/ analysis tables
+results/figures/      report figures
 ```
 
 ## Reproducing
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env              # add OPENAI_API_KEY
-
-# Analysis only (no API calls), using the committed data
-python src/analyze_main.py --run main                      # primary analysis
-python src/analyze_main.py --run main --include-invalid    # sensitivity analysis S1
-python src/levels_table.py --run main                      # outcome levels per condition
-python src/status_table.py --run main                      # why responses are invalid
-
-# Re-collecting data (costs API credits)
-python src/batch.py plan --run main --part-size 3000
-python src/batch.py submit --run main --max-active 1
-python src/batch.py status --run main
-python src/batch.py collect --run main
+cp .env.example .env        # add OPENAI_API_KEY (data collection) and ANTHROPIC_API_KEY (reason labeling)
 ```
 
-## Next steps
+Analysis only, from the committed data (no API calls):
 
-- Reason analysis (RQ3): code the models' stated reasons, validate LLM labels against hand labels, and check how
-  often stated reasons match actual choices
-- Secondary and sensitivity analyses S2–S6, and the EV-hint comparison
-- Figures and a short report
+```bash
+python src/analyze_main.py --run main                         # primary analysis
+python src/analyze_main.py --run main --include-invalid       # sensitivity analysis S1
+python src/analyze_main.py --run main --subset moderate_p     # S3-S6: also extreme_p, version1, version2,
+                                                              #         mixed_A, mixed_B, uncensored
+python src/sensitivity_summary.py --run main                  # all sensitivity analyses in one table
+python src/position_check.py --runs main --mode none --conditions baseline oneshot_gain oneshot_loss
+python src/reason_analysis.py                                 # reason analysis tables
+python src/make_figures.py                                    # report figures
+```
+
+Re-collecting data (costs API credits):
+
+```bash
+python src/batch.py plan --run main --part-size 3000          # then: submit, status, collect, retry
+python src/label_reasons.py label --model claude-haiku-5-5 --thinking disabled      # validation sample
+python src/label_reasons.py agreement --model claude-haiku-5-5 --thinking disabled
+python src/label_batch.py plan --run main --name main_v2 --model claude-haiku-5-5 --thinking disabled
+                                                              # then: submit, status, collect, merge
+```
+
+The model is available only as an alias without a dated snapshot, so re-collected data may differ.
 
 ## Author
 

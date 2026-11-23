@@ -449,8 +449,44 @@
 - Two readings of "loss averse": on gain items some flagged reasons state that loss aversion does not
   apply and use an EV rule (17-26% of flagged reasons in mode none); most read it as avoiding losses
   or uncertainty (risk-averse rules), the mechanism of the spillover of direct_loss_tech.
-- Dominance violations: under direct instructions they state risk-averse rules (77-100%), i.e. a
-  deliberate avoid-any-lottery rule (extensive margin); without instructions they mostly state EV
-  rules (51-88%), i.e. execution errors.
+- Dominance violations: under direct risk instructions and direct_loss_tech they state risk-averse rules 
+  (77-100%; 52-85% under direct_loss_plain)
 - Caveats: reasons are written after the answers and may be rationalizations; behavior is only
   defined for valid responses; 95% CIs without multiplicity adjustment.
+
+
+## 2026-11-22 Pre-registered interpretation rule 5.3 (one-shot copying) and scope
+
+- position_check.py extended with --conditions (per-condition report on the main run).
+- Mode none, relative CE position from p = 0.1 to 0.9: baseline gain 0.29 -> 0.91, oneshot_gain gain
+  0.19 -> 0.84 (still tracks p, shifted toward risk aversion: preference adoption, not copying);
+  baseline loss 0.32 -> 0.90, oneshot_loss loss 0.52 -> 0.80 (still increases with p, so not copying
+  by the pre-registered rule, but the slope is halved). Exploratory: the compression toward the middle
+  of the list raises the CE at low p and lowers it at high p, which explains why the mean effect P7
+  is near zero. Non-target items are also compressed under both one-shot conditions.
+- Mode high: CE positions track p closely in all three conditions; one-shot examples have almost no
+  effect.
+- Scope: the age experiment is dropped and moved to future work.
+
+
+## 2026-11-22 Sensitivity analyses S3-S6
+
+- analyze_main.py extended with --subset (S3 moderate_p / extreme_p, S4 version1 / version2,
+  S5 mixed_A / mixed_B, S6 uncensored); the primary analysis was re-run first and is unchanged.
+  Summary: results/tables/main_sensitivity_summary.csv (src/sensitivity_summary.py).
+- Conclusions unchanged in every sensitivity analysis: P1-P5, P7, P10-P12.
+- P6 (oneshot_mixed): +0.56 steps (as predicted) in direction A, -0.19 (no meaningful effect) in
+  direction B; no meaningful effect in version 1 and without censored responses. The weak effect is
+  procedure-dependent.
+- P8 (oneshot_loss, mixed): no meaningful effect in direction A (as predicted), decrease of -0.55
+  steps in direction B.
+- P9 (cot, gain): +2.04 steps in version 1, +0.36 (inconclusive) in version 2: label-dependent size.
+- Effects are larger for moderate than for extreme p (e.g. P1 +2.08 vs +0.99 steps); excluding
+  censored responses lowers P4 from +3.28 to +1.93 steps.
+
+
+## 2026-11-22 Write-up and repository clean-up
+
+- Report (docs/report.md), figures (src/make_figures.py, results/figures/) and README rewritten.
+- docs/project_plan.md marked as superseded by the pre-registration and the report.
+- Removed Excel lock files committed by mistake; .gitignore extended.

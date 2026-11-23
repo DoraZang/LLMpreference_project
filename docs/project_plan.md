@@ -1,3 +1,4 @@
+> **Superseded.** This was the initial plan. The final design is in [preregistration.md](preregistration.md), results in [report.md](report.md).
 # Can Prompting Shift an LLM's Risk and Loss Preferences? A Revisit of "LLM Economicus?" Section 4
 
 **Author:** Dora

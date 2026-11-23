@@ -1,0 +1,32 @@
+primary,mode,condition,item_type,outcome,prediction,n_items,n_excluded,estimate,estimate_steps,ci95_low,ci95_high,ci_adj_low,ci_adj_high,conclusion
+,high,cot,mixed,log_ratio,0,20,0,0.0063,0.03,-0.0063,0.0209,,,no meaningful effect
+,high,cot,mixed,valid,?,20,0,-0.005,,-0.02,0.01,,,CI includes 0
+,high,direct_loss_plain,mixed,log_ratio,?,20,0,0.6897,3.29,0.6709,0.7086,,,effect (increase)
+,high,direct_loss_plain,mixed,valid,?,20,0,0.005,,0.0,0.015,,,CI includes 0
+P12,high,direct_loss_tech,mixed,log_ratio,up,20,0,0.7724,3.69,0.7525,0.7933,0.7429,0.8038,effect as predicted
+,high,direct_loss_tech,mixed,valid,?,20,0,0.005,,0.0,0.015,,,CI includes 0
+,high,direct_risk_plain,mixed,valid,?,20,0,-0.715,,-0.795,-0.625,,,decrease
+,high,direct_risk_tech,mixed,log_ratio,?,16,4,0.6376,3.05,0.5971,0.6759,,,effect (increase)
+,high,direct_risk_tech,mixed,valid,?,20,0,-0.195,,-0.26,-0.135,,,decrease
+,high,oneshot_gain,mixed,log_ratio,?,20,0,0.0518,0.25,0.023,0.0848,,,no meaningful effect
+,high,oneshot_gain,mixed,valid,?,20,0,-0.005,,-0.025,0.01,,,CI includes 0
+,high,oneshot_loss,mixed,log_ratio,?,20,0,0.0139,0.07,-0.0018,0.029,,,no meaningful effect
+,high,oneshot_loss,mixed,valid,?,20,0,-0.005,,-0.02,0.01,,,CI includes 0
+,high,oneshot_mixed,mixed,log_ratio,?,20,0,0.37,1.77,0.303,0.4341,,,effect (increase)
+,high,oneshot_mixed,mixed,valid,?,20,0,-0.015,,-0.035,0.005,,,CI includes 0
+,none,cot,mixed,log_ratio,0,20,0,-0.1026,-0.49,-0.1512,-0.0562,,,inconclusive
+,none,cot,mixed,valid,?,20,0,0.0038,,-0.02,0.025,,,CI includes 0
+P5,none,direct_loss_plain,mixed,log_ratio,up,20,0,0.2943,1.41,0.2385,0.3522,0.2137,0.3776,effect as predicted
+,none,direct_loss_plain,mixed,valid,?,20,0,-0.0362,,-0.0613,-0.015,,,decrease
+P4,none,direct_loss_tech,mixed,log_ratio,up,20,0,0.4044,1.93,0.3488,0.463,0.3273,0.4912,effect as predicted
+,none,direct_loss_tech,mixed,valid,?,20,0,-0.2787,,-0.3475,-0.2175,,,decrease
+,none,direct_risk_plain,mixed,log_ratio,?,8,12,0.4718,2.25,0.4142,0.5311,,,effect (increase)
+,none,direct_risk_plain,mixed,valid,?,20,0,-0.8187,,-0.8538,-0.7825,,,decrease
+,none,direct_risk_tech,mixed,log_ratio,?,18,2,0.2853,1.36,0.2413,0.3266,,,effect (increase)
+,none,direct_risk_tech,mixed,valid,?,20,0,-0.4612,,-0.5237,-0.4,,,decrease
+,none,oneshot_gain,mixed,log_ratio,?,20,0,0.0373,0.18,0.014,0.0609,,,no meaningful effect
+,none,oneshot_gain,mixed,valid,?,20,0,-0.025,,-0.0425,-0.0087,,,decrease
+P8,none,oneshot_loss,mixed,log_ratio,0,20,0,-0.0536,-0.26,-0.0957,-0.013,-0.1166,0.0037,inconclusive
+,none,oneshot_loss,mixed,valid,?,20,0,0.0,,-0.0112,0.01,,,CI includes 0
+P6,none,oneshot_mixed,mixed,log_ratio,up,20,0,0.0371,0.18,-0.0079,0.081,-0.0266,0.1046,no meaningful effect
+,none,oneshot_mixed,mixed,valid,?,20,0,0.0013,,-0.0163,0.0188,,,CI includes 0
